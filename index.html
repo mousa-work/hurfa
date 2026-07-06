@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حُرفة — سوق الخدمات المصغّرة العربي</title>
+  <meta name="description" content="حُرفة: سوق عربي للخدمات المصغّرة يجمعك بأمهر المستقلين. برمجة، تصميم، تسويق، كتابة والمزيد.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="header"></div>
+
+<!-- البطل -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <h1>اعثر على <span class="accent">المستقل المناسب</span><br>لإنجاز مشروعك القادم</h1>
+      <p class="lead">آلاف الخدمات الاحترافية من أمهر المستقلين العرب، تبدأ من 5 دولارات فقط.</p>
+      <form class="hero-search" action="browse.html" method="get">
+        <input type="text" name="q" placeholder="جرّب: تصميم شعار، موقع إلكتروني، مونتاج فيديو...">
+        <button type="submit">بحث</button>
+      </form>
+      <div class="hero-tags">
+        <span>الأكثر طلباً:</span>
+        <a href="browse.html?q=شعار">تصميم شعار</a>
+        <a href="browse.html?q=موقع">تطوير مواقع</a>
+        <a href="browse.html?q=فيديو">مونتاج فيديو</a>
+        <a href="browse.html?q=ترجمة">ترجمة</a>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><b>+12,000</b><span>خدمة احترافية</span></div>
+      <div class="stat"><b>+4,500</b><span>مستقل موهوب</span></div>
+      <div class="stat"><b>+38,000</b><span>طلب مكتمل</span></div>
+      <div class="stat"><b>4.8/5</b><span>متوسط التقييم</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- التصنيفات -->
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>تصفح حسب التصنيف</h2>
+        <p>كل ما يحتاجه مشروعك في مكان واحد</p>
+      </div>
+      <a href="browse.html" class="more">عرض جميع الخدمات ←</a>
+    </div>
+    <div class="cats-grid" id="catsGrid"></div>
+  </div>
+</section>
+
+<!-- الخدمات الشائعة -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>خدمات يحبها العملاء</h2>
+        <p>الأعلى تقييماً على المنصة هذا الشهر</p>
+      </div>
+      <a href="browse.html" class="more">عرض المزيد ←</a>
+    </div>
+    <div class="gigs-grid" id="popularGigs"></div>
+  </div>
+</section>
+
+<!-- كيف تعمل المنصة -->
+<section class="section" id="how">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>كيف تعمل حُرفة؟</h2>
+        <p>ثلاث خطوات تفصلك عن إنجاز مشروعك</p>
+      </div>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <span class="step-num">1</span>
+        <div class="step-icon">🔎</div>
+        <h3>ابحث عن الخدمة</h3>
+        <p>تصفح آلاف الخدمات وقارن بين البائعين بالتقييمات والأسعار ومدة التسليم حتى تجد الأنسب لك.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-num">2</span>
+        <div class="step-icon">🛒</div>
+        <h3>اطلب بضغطة زر</h3>
+        <p>اختر الباقة المناسبة لميزانيتك وادفع بأمان. يبقى مبلغك محفوظاً لدى المنصة حتى استلام العمل.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-num">3</span>
+        <div class="step-icon">✅</div>
+        <h3>استلم عملك</h3>
+        <p>تابع تقدم العمل وتواصل مع البائع مباشرة، ثم استلم مشروعك جاهزاً وقيّم تجربتك.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- آراء العملاء -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>ماذا يقول عملاؤنا؟</h2>
+        <p>قصص نجاح حقيقية من مجتمع حُرفة</p>
+      </div>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="quote">"أطلقت متجري الإلكتروني كاملاً عبر حُرفة: الشعار والهوية والمتجر والتسويق. جودة عالية وأسعار لم أتوقعها. المنصة غيّرت طريقة عملي بالكامل."</p>
+        <div class="who">
+          <span class="avatar" style="background:#4f46e5">عر</span>
+          <div><b>عبدالرحمن السالم</b><span>مؤسس متجر "لمسة"</span></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="quote">"كصاحبة مشروع ناشئ، وفرت عليّ حُرفة تكلفة توظيف فريق كامل. أجد المصمم والمبرمج والمسوق في مكان واحد وبضمان كامل لحقوقي."</p>
+        <div class="who">
+          <span class="avatar" style="background:#db2777">نه</span>
+          <div><b>نهى العامري</b><span>مؤسسة تطبيق "وصفة"</span></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="quote">"بدأت كبائع على حُرفة قبل سنتين، واليوم العمل الحر مصدر دخلي الأساسي. المنصة سهلة، والعملاء جادون، والمدفوعات تصل بلا تأخير."</p>
+        <div class="who">
+          <span class="avatar" style="background:#059669">مج</span>
+          <div><b>مجاهد النور</b><span>مصمم موشن جرافيك</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section">
+  <div class="container">
+    <div class="cta-band">
+      <div>
+        <h2>حوّل مهارتك إلى دخل حقيقي</h2>
+        <p>انضم إلى آلاف المستقلين العرب واعرض خدماتك على عملاء من كل مكان.</p>
+      </div>
+      <a href="create-gig.html" class="btn btn-primary btn-lg">ابدأ البيع الآن</a>
+    </div>
+  </div>
+</section>
+
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderHeader();
+  renderFooter();
+
+  // شبكة التصنيفات مع عدد خدمات كل تصنيف
+  document.getElementById('catsGrid').innerHTML = CATEGORIES.map(c => {
+    const count = allGigs().filter(g => g.cat === c.id).length;
+    return `
+      <a href="browse.html?cat=${c.id}" class="cat-card">
+        <span class="cat-icon" style="background:${c.color}1a; color:${c.color}">${c.icon}</span>
+        <h3>${c.name}</h3>
+        <span>${count} خدمات</span>
+      </a>`;
+  }).join('');
+
+  // أعلى 8 خدمات تقييماً (مع عدد المقيّمين كعامل ترجيح)
+  const popular = [...GIGS]
+    .sort((a, b) => (b.rating * Math.log(b.reviews + 1)) - (a.rating * Math.log(a.reviews + 1)))
+    .slice(0, 8);
+  document.getElementById('popularGigs').innerHTML = popular.map(gigCardHtml).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إتمام الطلب — حُرفة</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="header"></div>
+<div class="container" id="content"></div>
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderHeader();
+  renderFooter();
+
+  const gig = gigById(param('id'));
+  const pkgKey = ['basic', 'standard', 'premium'].includes(param('pkg')) ? param('pkg') : 'basic';
+  const content = document.getElementById('content');
+
+  if (!gig) {
+    content.innerHTML = `
+      <div class="empty-state" style="margin:60px 0">
+        <div class="icon">😕</div>
+        <h3>الخدمة غير موجودة</h3>
+        <a href="browse.html" class="btn btn-primary" style="margin-top:10px">تصفح الخدمات</a>
+      </div>`;
+  } else if (requireLogin()) {
+    const pkg = gig.packages[pkgKey];
+    const seller = gigSeller(gig);
+    const fee = Math.max(2, Math.round(pkg.price * 0.05));
+    const total = pkg.price + fee;
+
+    content.innerHTML = `
+    <div class="checkout-layout">
+      <div>
+        <h1 style="font-size:26px; font-weight:800; color:var(--dark); margin-bottom:6px">إتمام الطلب</h1>
+        <p style="color:var(--muted); margin-bottom:26px">خطوة أخيرة ويصبح طلبك بين يدي ${esc(seller.name)}</p>
+
+        <div class="panel">
+          <h2>💳 بيانات الدفع (تجريبية)</h2>
+          <p style="color:var(--muted); font-size:13.5px; margin-bottom:18px">
+            هذا موقع تجريبي — لا تُدخل بيانات بطاقة حقيقية. أي أرقام وهمية ستفي بالغرض.
+          </p>
+          <form id="payForm">
+            <div class="field">
+              <label>الاسم على البطاقة</label>
+              <input class="input" type="text" id="cardName" placeholder="AHMAD ALI" required>
+            </div>
+            <div class="field">
+              <label>رقم البطاقة</label>
+              <input class="input" type="text" id="cardNumber" placeholder="4242 4242 4242 4242" inputmode="numeric" minlength="12" required>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>تاريخ الانتهاء</label>
+                <input class="input" type="text" id="cardExp" placeholder="12/28" required>
+              </div>
+              <div class="field">
+                <label>رمز الأمان CVV</label>
+                <input class="input" type="text" id="cardCvv" placeholder="123" inputmode="numeric" minlength="3" maxlength="4" required>
+              </div>
+            </div>
+            <div class="field">
+              <label>ملاحظات للبائع (اختياري)</label>
+              <textarea class="input" id="orderNotes" placeholder="اشرح تفاصيل ما تحتاجه بدقة ليبدأ البائع فوراً..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">تأكيد الطلب والدفع (${money(total)})</button>
+            <p style="text-align:center; font-size:13px; color:var(--muted); margin-top:12px">
+              🔒 مبلغك محفوظ بأمان ولا يصل للبائع إلا بعد استلامك للعمل
+            </p>
+          </form>
+        </div>
+      </div>
+
+      <aside class="summary-card">
+        <div class="summary-thumb" style="${gradStyle(gig.grad)}">${gig.icon}</div>
+        <div class="summary-body">
+          <h3>${esc(gig.title)}</h3>
+          <div class="summary-line"><span>البائع</span><b>${esc(seller.name)}</b></div>
+          <div class="summary-line"><span>الباقة</span><b>${esc(pkg.name)}</b></div>
+          <div class="summary-line"><span>مدة التسليم</span><b>${pkg.days} ${pkg.days <= 2 ? 'يوم' : 'أيام'}</b></div>
+          <div class="summary-line"><span>عدد التعديلات</span><b>${pkg.revisions}</b></div>
+          <div class="summary-line"><span>سعر الخدمة</span><b>${money(pkg.price)}</b></div>
+          <div class="summary-line"><span>رسوم المنصة</span><b>${money(fee)}</b></div>
+          <div class="summary-total"><span>الإجمالي</span><span>${money(total)}</span></div>
+        </div>
+      </aside>
+    </div>`;
+
+    document.getElementById('payForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const orderId = 'HR-' + Date.now().toString(36).toUpperCase();
+      addOrder({
+        id: orderId,
+        gigId: gig.id,
+        gigTitle: gig.title,
+        icon: gig.icon,
+        grad: gig.grad,
+        seller: seller.name,
+        pkg: pkg.name,
+        price: total,
+        days: pkg.days,
+        notes: document.getElementById('orderNotes').value,
+        status: 'active',
+        date: new Date().toISOString(),
+        buyer: getUser().email,
+      });
+
+      content.innerHTML = `
+        <div class="success-box">
+          <div class="icon">✓</div>
+          <h1>تم تأكيد طلبك بنجاح!</h1>
+          <p>
+            رقم الطلب: <b style="color:var(--dark)">${orderId}</b><br>
+            سيبدأ <b>${esc(seller.name)}</b> بالعمل على طلبك فوراً،
+            والتسليم المتوقع خلال <b>${pkg.days} ${pkg.days <= 2 ? 'يوم' : 'أيام'}</b>.
+          </p>
+          <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap">
+            <a href="dashboard.html?tab=orders" class="btn btn-primary btn-lg">متابعة طلباتي</a>
+            <a href="browse.html" class="btn btn-outline btn-lg">مواصلة التصفح</a>
+          </div>
+        </div>`;
+      window.scrollTo(0, 0);
+    });
+  }
+</script>
+</body>
+</html>

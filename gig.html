@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تفاصيل الخدمة — حُرفة</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="header"></div>
+
+<div class="container" id="gigContainer"></div>
+
+<!-- الخدمات المشابهة -->
+<section class="section section-alt" id="relatedSection" style="display:none">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>خدمات مشابهة قد تعجبك</h2>
+      </div>
+    </div>
+    <div class="gigs-grid" id="relatedGigs"></div>
+  </div>
+</section>
+
+<!-- نافذة مراسلة البائع -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeContact()">✕</button>
+    <h3 id="contactTitle">مراسلة البائع</h3>
+    <p>عادةً ما يرد البائع خلال ساعات قليلة</p>
+    <form id="contactForm">
+      <div class="field">
+        <textarea class="input" id="contactMsg" placeholder="مرحباً، أود الاستفسار عن خدمتك..." required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">إرسال الرسالة</button>
+    </form>
+  </div>
+</div>
+
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  const gig = gigById(param('id'));
+
+  if (!gig) {
+    renderHeader();
+    renderFooter();
+    document.getElementById('gigContainer').innerHTML = `
+      <div class="empty-state" style="margin:60px 0">
+        <div class="icon">😕</div>
+        <h3>الخدمة غير موجودة</h3>
+        <p>ربما تم حذفها أو أن الرابط غير صحيح</p>
+        <a href="browse.html" class="btn btn-primary">تصفح الخدمات</a>
+      </div>`;
+  } else {
+    renderHeader(gig.cat);
+    renderFooter();
+    document.title = gig.title + ' — حُرفة';
+
+    const seller = gigSeller(gig);
+    const cat = catById(gig.cat);
+    const reviews = gigReviews(gig);
+    const levelBadge = seller.level === 'أفضل بائع' ? 'badge-gold' : seller.level === 'بائع مميز' ? 'badge-green' : seller.level === 'بائع موثوق' ? 'badge-blue' : 'badge-gray';
+    const sellerLink = gig.custom ? '#' : `seller.html?id=${seller.id}`;
+
+    document.getElementById('gigContainer').innerHTML = `
+    <div class="gig-layout">
+      <div class="gig-main">
+        <div class="breadcrumb" style="margin:22px 0 10px">
+          <a href="index.html">الرئيسية</a> /
+          <a href="browse.html?cat=${gig.cat}">${cat ? cat.name : 'خدمات'}</a>
+        </div>
+        <h1>${esc(gig.title)}</h1>
+
+        <div class="gig-meta-row">
+          <a href="${sellerLink}">${avatarHtml(seller.name)}</a>
+          <div>
+            <a href="${sellerLink}"><b style="color:var(--dark)">${esc(seller.name)}</b></a>
+            <span class="badge ${levelBadge}" style="margin-inline-start:8px">${esc(seller.level)}</span><br>
+            <span class="gig-rating" style="margin:0">
+              <span class="star">★</span> <b>${gig.rating.toFixed(1)}</b>
+              <span>(${gig.reviews} تقييم)</span> ·
+              <span>${seller.sales} عملية بيع</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="gig-gallery-main" style="${gradStyle(gig.grad)}" id="galleryMain"><span>${gig.icon}</span></div>
+        <div class="gig-gallery-thumbs" id="galleryThumbs"></div>
+
+        <div class="content-block">
+          <h2>وصف الخدمة</h2>
+          <p>${esc(gig.desc)}</p>
+        </div>
+
+        <div class="content-block">
+          <h2>مجالات الخدمة</h2>
+          <div class="tag-list">${(gig.tags || []).map(t => `<span>${esc(t)}</span>`).join('')}</div>
+        </div>
+
+        <div class="content-block">
+          <h2>عن البائع</h2>
+          <div class="seller-card">
+            <div class="seller-card-top">
+              <a href="${sellerLink}">${avatarHtml(seller.name, 'avatar-lg')}</a>
+              <div>
+                <h3>${esc(seller.name)}</h3>
+                <p>${esc(seller.title)}</p>
+                <span class="gig-rating" style="margin:0"><span class="star">★</span> <b>${seller.rating.toFixed(1)}</b></span>
+              </div>
+            </div>
+            <p style="font-size:14.5px; margin-bottom:16px">${esc(seller.bio)}</p>
+            <div class="seller-facts">
+              <div><span>الدولة</span><b>${esc(seller.country)}</b></div>
+              <div><span>عضو منذ</span><b>${seller.since}</b></div>
+              <div><span>متوسط سرعة الرد</span><b>${esc(seller.response)}</b></div>
+              <div><span>عمليات البيع</span><b>${seller.sales}</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-block">
+          <h2>التقييمات (${gig.reviews})</h2>
+          ${reviews.map(r => `
+            <div class="review-item">
+              <div class="review-head">
+                ${avatarHtml(r.name)}
+                <div>
+                  <b>${esc(r.name)}</b>
+                  <span class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span>
+                </div>
+                <small>${r.date}</small>
+              </div>
+              <p>${esc(r.text)}</p>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- صندوق الطلب -->
+      <aside>
+        <div class="order-box">
+          <div class="pkg-tabs" id="pkgTabs">
+            <button data-pkg="basic" class="active">أساسية</button>
+            <button data-pkg="standard">قياسية</button>
+            <button data-pkg="premium">مميزة</button>
+          </div>
+          <div class="pkg-body" id="pkgBody"></div>
+          <button class="contact-link" onclick="openContact()">💬 مراسلة البائع أولاً</button>
+        </div>
+      </aside>
+    </div>`;
+
+    // معرض الصور المصغرة (تدرجات بديلة)
+    const thumbGrads = [gig.grad, (gig.grad + 3) % GRADS.length, (gig.grad + 7) % GRADS.length];
+    const thumbIcons = [gig.icon, cat ? cat.icon : '⭐', '✨'];
+    document.getElementById('galleryThumbs').innerHTML = thumbGrads.map((g, i) => `
+      <div class="t ${i === 0 ? 'active' : ''}" style="${gradStyle(g)}" data-grad="${g}" data-icon="${thumbIcons[i]}">${thumbIcons[i]}</div>`).join('');
+    document.querySelectorAll('.gig-gallery-thumbs .t').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.gig-gallery-thumbs .t').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        const main = document.getElementById('galleryMain');
+        main.setAttribute('style', gradStyle(parseInt(t.dataset.grad)));
+        main.innerHTML = `<span>${t.dataset.icon}</span>`;
+      });
+    });
+
+    // عرض الباقة المحددة
+    let currentPkg = 'basic';
+    function renderPkg() {
+      const p = gig.packages[currentPkg];
+      document.getElementById('pkgBody').innerHTML = `
+        <div class="pkg-price-row">
+          <span class="name">باقة ${esc(p.name)}</span>
+          <span class="price">${money(p.price)}</span>
+        </div>
+        <p class="pkg-desc">${esc(p.desc)}</p>
+        <div class="pkg-meta">
+          <span>⏱️ التسليم خلال ${p.days} ${p.days <= 2 ? 'يوم' : 'أيام'}</span>
+          <span>🔄 ${p.revisions} تعديلات</span>
+        </div>
+        <ul class="pkg-features">${p.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+        <a href="checkout.html?id=${gig.id}&pkg=${currentPkg}" class="btn btn-primary btn-lg btn-block">متابعة الطلب (${money(p.price)})</a>`;
+    }
+    document.querySelectorAll('#pkgTabs button').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('#pkgTabs button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentPkg = b.dataset.pkg;
+        renderPkg();
+      });
+    });
+    renderPkg();
+
+    // خدمات مشابهة من نفس التصنيف
+    const related = GIGS.filter(g => g.cat === gig.cat && g.id !== gig.id).slice(0, 4);
+    if (related.length) {
+      document.getElementById('relatedSection').style.display = 'block';
+      document.getElementById('relatedGigs').innerHTML = related.map(gigCardHtml).join('');
+    }
+
+    // مراسلة البائع
+    document.getElementById('contactTitle').textContent = 'مراسلة ' + seller.name;
+    document.getElementById('contactForm').addEventListener('submit', e => {
+      e.preventDefault();
+      if (!getUser()) { requireLogin(); return; }
+      addMessage({
+        to: seller.name,
+        gigId: gig.id,
+        text: document.getElementById('contactMsg').value,
+        date: new Date().toISOString(),
+      });
+      closeContact();
+      document.getElementById('contactMsg').value = '';
+      toast('تم إرسال رسالتك إلى ' + seller.name + ' ✉️');
+    });
+  }
+
+  function openContact() { document.getElementById('contactModal').classList.add('open'); }
+  function closeContact() { document.getElementById('contactModal').classList.remove('open'); }
+  document.getElementById('contactModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeContact();
+  });
+</script>
+</body>
+</html>

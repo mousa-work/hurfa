@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>أضف خدمة جديدة — حُرفة</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="header"></div>
+
+<div class="page-head">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">الرئيسية</a> / أضف خدمة</div>
+    <h1>أضف خدمة جديدة 🚀</h1>
+    <p>اعرض مهارتك على آلاف المشترين وابدأ بتحقيق الدخل</p>
+  </div>
+</div>
+
+<div class="container">
+  <div style="max-width:760px; margin:36px auto 70px">
+    <div class="panel">
+      <div class="form-error" id="formError"></div>
+      <form id="gigForm">
+        <div class="field">
+          <label for="title">عنوان الخدمة</label>
+          <input class="input" type="text" id="title" placeholder="سأقوم بـ..." maxlength="90" required>
+          <div class="hint">ابدأ العنوان بـ "سأقوم بـ" أو "سأصمم" ليكون واضحاً وجذاباً (حتى 90 حرفاً)</div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="cat">التصنيف</label>
+            <select id="cat" required></select>
+          </div>
+          <div class="field">
+            <label for="icon">أيقونة الخدمة</label>
+            <select id="icon">
+              <option>💻</option><option>🎨</option><option>📈</option><option>✍️</option>
+              <option>🎬</option><option>🎙️</option><option>💼</option><option>🤖</option>
+              <option>📱</option><option>🛒</option><option>📐</option><option>✨</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="desc">وصف الخدمة</label>
+          <textarea class="input" id="desc" placeholder="اشرح ما تقدمه بالتفصيل: ماذا سيستلم المشتري؟ ما الذي يميزك؟" minlength="40" required></textarea>
+          <div class="hint">40 حرفاً على الأقل — الوصف الجيد يضاعف مبيعاتك</div>
+        </div>
+
+        <div class="field">
+          <label for="tags">كلمات مفتاحية (افصل بينها بفاصلة)</label>
+          <input class="input" type="text" id="tags" placeholder="مثال: تصميم شعار, هوية بصرية, براندينج">
+        </div>
+
+        <h2 style="font-size:18px; font-weight:800; color:var(--dark); margin:26px 0 14px; padding-top:20px; border-top:1px solid var(--border)">💰 باقات الخدمة</h2>
+
+        <div class="form-row-3">
+          <div class="field">
+            <label>سعر الباقة الأساسية ($)</label>
+            <input class="input" type="number" id="priceBasic" min="5" placeholder="5" required>
+          </div>
+          <div class="field">
+            <label>القياسية ($) <small style="color:var(--muted)">اختياري</small></label>
+            <input class="input" type="number" id="priceStandard" min="5" placeholder="—">
+          </div>
+          <div class="field">
+            <label>المميزة ($) <small style="color:var(--muted)">اختياري</small></label>
+            <input class="input" type="number" id="pricePremium" min="5" placeholder="—">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="days">مدة التسليم (أيام)</label>
+            <input class="input" type="number" id="days" min="1" max="60" value="3" required>
+          </div>
+          <div class="field">
+            <label for="revisions">عدد التعديلات المجانية</label>
+            <input class="input" type="number" id="revisions" min="0" max="20" value="2" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="features">ماذا تشمل الخدمة؟ (سطر لكل ميزة)</label>
+          <textarea class="input" id="features" placeholder="تسليم الملفات المصدرية&#10;استخدام تجاري&#10;دعم بعد التسليم" required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-block">نشر الخدمة 🚀</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderHeader();
+  renderFooter();
+
+  if (requireLogin()) {
+    document.getElementById('cat').innerHTML = CATEGORIES.map(c =>
+      `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+
+    document.getElementById('gigForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const user = getUser();
+      const err = document.getElementById('formError');
+
+      const basic = parseFloat(document.getElementById('priceBasic').value);
+      const standard = parseFloat(document.getElementById('priceStandard').value) || null;
+      const premium = parseFloat(document.getElementById('pricePremium').value) || null;
+      if (standard && standard < basic) {
+        err.textContent = 'سعر الباقة القياسية يجب أن يكون أعلى من الأساسية.';
+        err.classList.add('show'); window.scrollTo(0, 0); return;
+      }
+      if (premium && premium < (standard || basic)) {
+        err.textContent = 'سعر الباقة المميزة يجب أن يكون الأعلى بين الباقات.';
+        err.classList.add('show'); window.scrollTo(0, 0); return;
+      }
+
+      const days = parseInt(document.getElementById('days').value);
+      const revisions = parseInt(document.getElementById('revisions').value);
+      const features = document.getElementById('features').value
+        .split('\n').map(s => s.trim()).filter(Boolean).slice(0, 8);
+      const tags = document.getElementById('tags').value
+        .split(/[،,]/).map(s => s.trim()).filter(Boolean).slice(0, 6);
+
+      function pkg(name, price, extraDays, extraRev, desc) {
+        return { name, price, days: days + extraDays, revisions: revisions + extraRev, desc, features };
+      }
+
+      const packages = { basic: pkg('أساسية', basic, 0, 0, 'الباقة الأساسية للخدمة') };
+      if (standard) packages.standard = pkg('قياسية', standard, 2, 1, 'باقة موسعة بمزايا إضافية');
+      if (premium) packages.premium = pkg('مميزة', premium, 4, 2, 'الباقة الأشمل بأولوية تنفيذ');
+      // صفحة الخدمة تعرض 3 تبويبات دائماً — أكمل الباقات الناقصة بالأساسية
+      packages.standard = packages.standard || packages.basic;
+      packages.premium = packages.premium || packages.standard;
+
+      const gig = {
+        id: 'u' + Date.now().toString(36),
+        custom: true,
+        owner: user.email,
+        sellerName: user.name,
+        cat: document.getElementById('cat').value,
+        icon: document.getElementById('icon').value,
+        grad: Math.floor(Math.random() * GRADS.length),
+        rating: 5.0,
+        reviews: 0,
+        title: document.getElementById('title').value.trim(),
+        desc: document.getElementById('desc').value.trim(),
+        tags,
+        packages,
+      };
+
+      saveMyGig(gig);
+      toast('🎉 تم نشر خدمتك بنجاح!');
+      setTimeout(() => location.href = 'gig.html?id=' + gig.id, 900);
+    });
+  }
+</script>
+</body>
+</html>

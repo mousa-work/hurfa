@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم — حُرفة</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="header"></div>
+<div class="container" id="content"></div>
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderHeader();
+  renderFooter();
+
+  if (requireLogin()) {
+    const user = getUser();
+    const tab = ['overview', 'orders', 'gigs', 'favs'].includes(param('tab')) ? param('tab') : 'overview';
+
+    const TABS = [
+      { id: 'overview', icon: '📊', label: 'نظرة عامة' },
+      { id: 'orders',   icon: '📦', label: 'طلباتي' },
+      { id: 'gigs',     icon: '🛍️', label: 'خدماتي' },
+      { id: 'favs',     icon: '❤️', label: 'المفضلة' },
+    ];
+
+    const orders = getOrders().filter(o => o.buyer === user.email);
+    const gigs = myGigs().filter(g => g.owner === user.email);
+    const favs = getFavs().map(id => gigById(id)).filter(Boolean);
+    const spent = orders.filter(o => o.status !== 'cancel').reduce((s, o) => s + o.price, 0);
+
+    function statusHtml(o) {
+      if (o.status === 'done') return '<span class="status status-done">مكتمل ✓</span>';
+      if (o.status === 'cancel') return '<span class="status status-cancel">ملغي</span>';
+      return '<span class="status status-active">قيد التنفيذ</span>';
+    }
+
+    function ordersTable(list) {
+      if (!list.length) return `
+        <div class="empty-state">
+          <div class="icon">📦</div>
+          <h3>لا توجد طلبات بعد</h3>
+          <p>تصفح الخدمات واطلب أول خدمة لك</p>
+          <a href="browse.html" class="btn btn-primary">تصفح الخدمات</a>
+        </div>`;
+      return `
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>الخدمة</th><th>البائع</th><th>الباقة</th><th>المبلغ</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(o => `
+              <tr>
+                <td class="order-title"><a href="gig.html?id=${o.gigId}">${o.icon} ${esc(o.gigTitle)}</a><br><small style="color:var(--muted); font-weight:400">${o.id}</small></td>
+                <td>${esc(o.seller)}</td>
+                <td>${esc(o.pkg)}</td>
+                <td><b>${money(o.price)}</b></td>
+                <td>${new Date(o.date).toLocaleDateString('ar-EG')}</td>
+                <td>${statusHtml(o)}</td>
+                <td>${o.status === 'active' ? `<button class="btn btn-outline btn-sm" onclick="markDone('${o.id}')">تم الاستلام ✓</button>` : ''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    }
+
+    function panels() {
+      if (tab === 'orders') return `
+        <div class="panel">
+          <h2>📦 طلباتي (${orders.length})</h2>
+          ${ordersTable(orders)}
+        </div>`;
+
+      if (tab === 'gigs') return `
+        <div class="panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px">
+            <h2 style="margin:0">🛍️ خدماتي (${gigs.length})</h2>
+            <a href="create-gig.html" class="btn btn-primary">➕ أضف خدمة جديدة</a>
+          </div>
+          ${gigs.length ? `<div class="gigs-grid gigs-grid-3">${gigs.map(g => `
+            <div>
+              ${gigCardHtml(g)}
+              <button class="btn btn-danger btn-sm btn-block" style="margin-top:8px" onclick="removeGig('${g.id}')">🗑️ حذف الخدمة</button>
+            </div>`).join('')}</div>` : `
+          <div class="empty-state">
+            <div class="icon">🛍️</div>
+            <h3>لم تضف أي خدمة بعد</h3>
+            <p>اعرض مهارتك وابدأ بتحقيق دخل من عملك الحر</p>
+            <a href="create-gig.html" class="btn btn-primary">أضف خدمتك الأولى</a>
+          </div>`}
+        </div>`;
+
+      if (tab === 'favs') return `
+        <div class="panel">
+          <h2>❤️ المفضلة (${favs.length})</h2>
+          ${favs.length ? `<div class="gigs-grid gigs-grid-3">${favs.map(gigCardHtml).join('')}</div>` : `
+          <div class="empty-state">
+            <div class="icon">❤️</div>
+            <h3>قائمة المفضلة فارغة</h3>
+            <p>اضغط على رمز القلب في أي خدمة لتحفظها هنا</p>
+            <a href="browse.html" class="btn btn-primary">تصفح الخدمات</a>
+          </div>`}
+        </div>`;
+
+      // نظرة عامة
+      return `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="icon">📦</div><b>${orders.length}</b><span>إجمالي الطلبات</span></div>
+        <div class="stat-card"><div class="icon">💰</div><b>${money(spent)}</b><span>إجمالي الإنفاق</span></div>
+        <div class="stat-card"><div class="icon">🛍️</div><b>${gigs.length}</b><span>خدماتي المعروضة</span></div>
+        <div class="stat-card"><div class="icon">❤️</div><b>${favs.length}</b><span>في المفضلة</span></div>
+      </div>
+      <div class="panel">
+        <h2>أحدث الطلبات</h2>
+        ${ordersTable(orders.slice(0, 5))}
+      </div>`;
+    }
+
+    document.getElementById('content').innerHTML = `
+    <div class="dash-layout">
+      <aside class="dash-side">
+        <div class="dash-user">
+          ${avatarHtml(user.name, 'avatar-lg')}
+          <b>${esc(user.name)}</b>
+          <span>${esc(user.email)}</span>
+        </div>
+        <nav class="dash-nav">
+          ${TABS.map(t => `<a href="dashboard.html?tab=${t.id}" class="${tab === t.id ? 'active' : ''}">${t.icon} ${t.label}</a>`).join('')}
+          <a href="create-gig.html">➕ أضف خدمة</a>
+        </nav>
+      </aside>
+      <main>${panels()}</main>
+    </div>`;
+
+    window.markDone = function (orderId) {
+      updateOrderStatus(orderId, 'done');
+      toast('رائع! تم تأكيد استلام الطلب ✓');
+      setTimeout(() => location.reload(), 700);
+    };
+
+    window.removeGig = function (gigId) {
+      if (!confirm('هل أنت متأكد من حذف هذه الخدمة؟')) return;
+      deleteMyGig(gigId);
+      toast('تم حذف الخدمة');
+      setTimeout(() => location.reload(), 700);
+    };
+  }
+</script>
+</body>
+</html>

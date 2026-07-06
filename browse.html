@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تصفح الخدمات — حُرفة</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="header"></div>
+
+<div class="page-head">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">الرئيسية</a> / <span id="crumb">جميع الخدمات</span></div>
+    <h1 id="pageTitle">تصفح الخدمات</h1>
+    <p id="pageSub">اعثر على الخدمة المثالية لمشروعك</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="browse-layout">
+
+    <!-- الفلاتر -->
+    <aside class="filters">
+      <h3>تصفية النتائج</h3>
+
+      <div class="filter-group">
+        <label class="title">التصنيف</label>
+        <div id="catFilters"></div>
+      </div>
+
+      <div class="filter-group">
+        <label class="title">السعر (بالدولار)</label>
+        <div class="price-inputs">
+          <input type="number" id="minPrice" placeholder="من" min="0">
+          <input type="number" id="maxPrice" placeholder="إلى" min="0">
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="title">التقييم</label>
+        <label class="check"><input type="radio" name="rating" value="0" checked> جميع التقييمات</label>
+        <label class="check"><input type="radio" name="rating" value="4.5"> ★ 4.5 فأعلى</label>
+        <label class="check"><input type="radio" name="rating" value="4.8"> ★ 4.8 فأعلى</label>
+      </div>
+
+      <div class="filter-group">
+        <label class="title">مدة التسليم</label>
+        <label class="check"><input type="radio" name="delivery" value="0" checked> أي مدة</label>
+        <label class="check"><input type="radio" name="delivery" value="1"> خلال 24 ساعة</label>
+        <label class="check"><input type="radio" name="delivery" value="3"> حتى 3 أيام</label>
+        <label class="check"><input type="radio" name="delivery" value="7"> حتى أسبوع</label>
+      </div>
+
+      <button class="btn btn-ghost btn-block" id="clearFilters" style="margin-top:8px">✕ مسح الفلاتر</button>
+    </aside>
+
+    <!-- النتائج -->
+    <main>
+      <div class="browse-toolbar">
+        <span class="count" id="resultCount"></span>
+        <select class="sort-select" id="sortSelect">
+          <option value="popular">الأكثر شهرة</option>
+          <option value="rating">الأعلى تقييماً</option>
+          <option value="price-asc">السعر: من الأقل للأعلى</option>
+          <option value="price-desc">السعر: من الأعلى للأقل</option>
+          <option value="fastest">الأسرع تسليماً</option>
+        </select>
+      </div>
+      <div class="gigs-grid gigs-grid-3" id="results"></div>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="icon">🔍</div>
+        <h3>لا توجد نتائج مطابقة</h3>
+        <p>جرّب تعديل الفلاتر أو استخدام كلمات بحث مختلفة</p>
+        <button class="btn btn-primary" onclick="document.getElementById('clearFilters').click()">مسح الفلاتر</button>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  const urlCat = param('cat') || '';
+  const urlQ = (param('q') || '').trim();
+
+  renderHeader(urlCat);
+  renderFooter();
+
+  // عنوان الصفحة حسب التصنيف أو البحث
+  const cat = catById(urlCat);
+  if (cat) {
+    document.getElementById('pageTitle').textContent = cat.icon + ' ' + cat.name;
+    document.getElementById('crumb').textContent = cat.name;
+    document.title = cat.name + ' — حُرفة';
+  } else if (urlQ) {
+    document.getElementById('pageTitle').textContent = 'نتائج البحث عن: "' + urlQ + '"';
+    document.getElementById('crumb').textContent = 'بحث';
+  }
+
+  // فلاتر التصنيفات
+  document.getElementById('catFilters').innerHTML = CATEGORIES.map(c => `
+    <label class="check">
+      <input type="checkbox" name="cat" value="${c.id}" ${c.id === urlCat ? 'checked' : ''}> ${c.name}
+    </label>`).join('');
+
+  function currentFilters() {
+    return {
+      cats: [...document.querySelectorAll('input[name="cat"]:checked')].map(i => i.value),
+      min: parseFloat(document.getElementById('minPrice').value) || 0,
+      max: parseFloat(document.getElementById('maxPrice').value) || Infinity,
+      rating: parseFloat(document.querySelector('input[name="rating"]:checked').value),
+      delivery: parseInt(document.querySelector('input[name="delivery"]:checked').value),
+      sort: document.getElementById('sortSelect').value,
+    };
+  }
+
+  function apply() {
+    const f = currentFilters();
+    let list = allGigs();
+
+    if (urlQ) {
+      const q = urlQ.toLowerCase();
+      list = list.filter(g =>
+        g.title.toLowerCase().includes(q) ||
+        g.desc.toLowerCase().includes(q) ||
+        (g.tags || []).some(t => t.toLowerCase().includes(q)) ||
+        (catById(g.cat)?.name || '').includes(urlQ)
+      );
+    }
+    if (f.cats.length) list = list.filter(g => f.cats.includes(g.cat));
+    list = list.filter(g => g.packages.basic.price >= f.min && g.packages.basic.price <= f.max);
+    if (f.rating) list = list.filter(g => g.rating >= f.rating);
+    if (f.delivery) list = list.filter(g => g.packages.basic.days <= f.delivery);
+
+    switch (f.sort) {
+      case 'rating': list.sort((a, b) => b.rating - a.rating || b.reviews - a.reviews); break;
+      case 'price-asc': list.sort((a, b) => a.packages.basic.price - b.packages.basic.price); break;
+      case 'price-desc': list.sort((a, b) => b.packages.basic.price - a.packages.basic.price); break;
+      case 'fastest': list.sort((a, b) => a.packages.basic.days - b.packages.basic.days); break;
+      default: list.sort((a, b) => b.reviews - a.reviews);
+    }
+
+    document.getElementById('resultCount').innerHTML = `تم العثور على <b>${list.length}</b> خدمة`;
+    document.getElementById('results').innerHTML = list.map(gigCardHtml).join('');
+    document.getElementById('emptyState').style.display = list.length ? 'none' : 'block';
+    document.getElementById('results').style.display = list.length ? 'grid' : 'none';
+  }
+
+  // ربط جميع الفلاتر بإعادة العرض
+  document.querySelectorAll('.filters input').forEach(el => el.addEventListener('input', apply));
+  document.getElementById('sortSelect').addEventListener('change', apply);
+  document.getElementById('clearFilters').addEventListener('click', () => {
+    document.querySelectorAll('input[name="cat"]').forEach(i => i.checked = false);
+    document.getElementById('minPrice').value = '';
+    document.getElementById('maxPrice').value = '';
+    document.querySelector('input[name="rating"][value="0"]').checked = true;
+    document.querySelector('input[name="delivery"][value="0"]').checked = true;
+    apply();
+  });
+
+  apply();
+</script>
+</body>
+</html>
