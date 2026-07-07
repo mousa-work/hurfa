@@ -30,6 +30,9 @@
       <button type="submit" class="btn btn-primary btn-lg btn-block">تسجيل الدخول</button>
     </form>
     <p class="alt">ليس لديك حساب؟ <a href="register.html" id="registerLink">أنشئ حساباً مجاناً</a></p>
+    <p class="alt" style="font-size:12.5px; margin-top:12px; background:var(--bg-soft); border-radius:10px; padding:10px">
+      🛡️ لتجربة لوحة الإدارة: <b>admin@hurfa.com</b> / كلمة المرور <b>admin123</b>
+    </p>
   </div>
 </div>
 
@@ -61,8 +64,8 @@
       return;
     }
 
-    setUser({ name: user.name, email: user.email });
-    location.href = next ? decodeURIComponent(next) : 'dashboard.html';
+    setUser({ name: user.name, email: user.email, avatar: user.avatar || null });
+    location.href = next ? decodeURIComponent(next) : (user.email === ADMIN_EMAIL ? 'admin.html' : 'dashboard.html');
   });
 </script>
 </body>

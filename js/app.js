@@ -10,7 +10,12 @@ const LS = {
   orders: 'hurfa_orders',
   myGigs: 'hurfa_my_gigs',
   messages: 'hurfa_messages',
+  works: 'hurfa_works',
 };
+
+/* ---------- حساب مدير المنصة (تجريبي) ---------- */
+const ADMIN_EMAIL = 'admin@hurfa.com';
+const ADMIN_PASSWORD = 'admin123';
 
 function lsGet(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -20,6 +25,18 @@ function lsSet(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
 /* ---------- الجلسة ---------- */
 function getUser() { return lsGet(LS.session, null); }
+function isAdmin() { return getUser()?.email === ADMIN_EMAIL; }
+/* إنشاء حساب المدير تلقائياً إن لم يوجد */
+(function ensureAdmin() {
+  const users = lsGet(LS.users, []);
+  if (!users.some(u => u.email === ADMIN_EMAIL)) {
+    users.push({ name: 'مدير المنصة', email: ADMIN_EMAIL, password: ADMIN_PASSWORD, admin: true, joined: new Date().toISOString() });
+    lsSet(LS.users, users);
+  }
+})();
+function findUserByEmail(email) {
+  return lsGet(LS.users, []).find(u => u.email === String(email || '').toLowerCase()) || null;
+}
 function setUser(u) { lsSet(LS.session, u); }
 function logout() {
   localStorage.removeItem(LS.session);
@@ -49,7 +66,8 @@ function initials(name) {
   const parts = String(name).trim().split(/\s+/);
   return parts.slice(0, 2).map(p => p[0]).join('');
 }
-function avatarHtml(name, cls = '') {
+function avatarHtml(name, cls = '', img = null) {
+  if (img) return `<span class="avatar ${cls}" style="background:${avatarColor(name)}"><img src="${img}" alt="${esc(name)}"></span>`;
   return `<span class="avatar ${cls}" style="background:${avatarColor(name)}">${esc(initials(name))}</span>`;
 }
 function starsHtml(rating) {
@@ -78,14 +96,88 @@ function deleteMyGig(id) {
 /* بائع الخدمة — للخدمات المضافة من المستخدم نبني بطاقة بائع من بيانات حسابه */
 function gigSeller(gig) {
   if (gig.custom) {
+    const account = findUserByEmail(gig.owner);
     return {
       id: 0, name: gig.sellerName, title: 'عضو في حُرفة', level: 'بائع جديد',
-      country: '—', since: new Date().getFullYear(), response: 'ساعة واحدة',
-      rating: gig.rating, sales: 0,
+      country: '—', since: account ? new Date(account.joined).getFullYear() : new Date().getFullYear(),
+      response: 'ساعة واحدة', rating: gig.rating, sales: 0,
       bio: 'بائع جديد انضم إلى حُرفة وبدأ رحلته في العمل الحر.',
+      avatar: account?.avatar || null, email: gig.owner, custom: true,
     };
   }
   return sellerById(gig.sellerId);
+}
+
+/* ---------- سابقة الأعمال ---------- */
+/* أعمال البائعين الأساسيين تأتي من SELLER_WORKS، وأعمال المستخدمين تُحفظ محلياً */
+function getUserWorks(ownerEmail) {
+  return lsGet(LS.works, []).filter(w => w.owner === ownerEmail);
+}
+function addUserWork(work) {
+  const works = lsGet(LS.works, []);
+  works.unshift(work);
+  lsSet(LS.works, works);
+}
+function deleteUserWork(id) {
+  lsSet(LS.works, lsGet(LS.works, []).filter(w => String(w.id) !== String(id)));
+}
+function sellerWorks(sellerId) {
+  return (SELLER_WORKS[sellerId] || []).map((w, i) => ({ id: 's' + sellerId + '-' + i, title: w.t, icon: w.icon, grad: w.g, img: null }));
+}
+
+/* بطاقة عمل مع علامة «أُنجز عبر حُرفة» على طرف الصورة */
+const WM_CHIP = '<span class="wm-chip">أُنجز عبر <b>حُرفة.</b> ✓</span>';
+function workCardHtml(w, deletable = false) {
+  const thumb = w.img
+    ? `<img src="${w.img}" alt="${esc(w.title)}">`
+    : `<span class="emoji">${w.icon || '⭐'}</span>`;
+  const style = w.img ? '' : gradStyle(w.grad || 0);
+  return `
+  <div class="work-card" onclick='openWork(${JSON.stringify({ title: w.title, icon: w.icon || null, grad: w.grad || 0, img: w.img || null }).replace(/'/g, '&#39;')})'>
+    <div class="work-thumb" style="${style}">${thumb}${WM_CHIP}</div>
+    <div class="work-body">
+      <h4>${esc(w.title)}</h4>
+      <span>عمل مكتمل عبر المنصة</span>
+      ${deletable ? `<button class="btn btn-danger btn-sm btn-block" style="margin-top:8px" onclick="event.stopPropagation(); removeWork('${w.id}')">🗑️ حذف</button>` : ''}
+    </div>
+  </div>`;
+}
+
+/* عارض الأعمال */
+function openWork(w) {
+  let lb = document.getElementById('lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'lightbox';
+    lb.className = 'lightbox';
+    lb.addEventListener('click', e => { if (e.target === lb) closeWork(); });
+    document.body.appendChild(lb);
+  }
+  const inner = w.img
+    ? `<img src="${w.img}" alt="${esc(w.title)}">`
+    : `<span class="emoji">${w.icon || '⭐'}</span>`;
+  lb.innerHTML = `
+    <button class="lightbox-close" onclick="closeWork()">✕</button>
+    <div class="lightbox-inner">
+      <div class="lightbox-img" style="${w.img ? '' : gradStyle(w.grad || 0)}">${inner}${WM_CHIP}</div>
+      <div class="lightbox-cap">${esc(w.title)}</div>
+    </div>`;
+  lb.classList.add('open');
+}
+function closeWork() { document.getElementById('lightbox')?.classList.remove('open'); }
+
+/* تصغير صورة مرفوعة وتحويلها Data URL مربعة */
+function fileToDataUrl(file, size, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    const s = Math.min(img.width, img.height);
+    c.width = size; c.height = size;
+    c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+    URL.revokeObjectURL(img.src);
+    cb(c.toDataURL('image/jpeg', 0.85));
+  };
+  img.src = URL.createObjectURL(file);
 }
 
 /* ---------- المفضلة ---------- */
@@ -164,12 +256,14 @@ function renderHeader(activeCat) {
   const authArea = user ? `
     <div class="user-menu">
       <button class="user-avatar-btn" id="userMenuBtn">
-        ${avatarHtml(user.name)}
+        ${avatarHtml(user.name, '', user.avatar)}
         <span>${esc(user.name.split(' ')[0])}</span> ▾
       </button>
       <div class="user-dropdown" id="userDropdown">
+        ${isAdmin() ? '<a href="admin.html">🛡️ لوحة الإدارة</a><div class="sep"></div>' : ''}
         <a href="dashboard.html">📊 لوحة التحكم</a>
         <a href="dashboard.html?tab=orders">📦 طلباتي</a>
+        <a href="dashboard.html?tab=works">🖼️ سابقة أعمالي</a>
         <a href="dashboard.html?tab=favs">❤️ المفضلة</a>
         <a href="create-gig.html">➕ أضف خدمة</a>
         <div class="sep"></div>

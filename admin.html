@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة الإدارة — حُرفة</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="header"></div>
+<div class="container" id="content"></div>
+<div id="footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderHeader();
+  renderFooter();
+
+  const content = document.getElementById('content');
+
+  if (!isAdmin()) {
+    content.innerHTML = `
+      <div class="empty-state" style="margin:60px auto; max-width:520px">
+        <div class="icon">🛡️</div>
+        <h3>هذه الصفحة لمدير المنصة فقط</h3>
+        <p>سجّل الدخول بحساب المدير للوصول إلى لوحة الإدارة<br><small>(للتجربة: admin@hurfa.com / admin123)</small></p>
+        <a href="login.html?next=admin.html" class="btn btn-primary">تسجيل دخول المدير</a>
+      </div>`;
+  } else {
+    const tab = ['overview', 'users', 'orders', 'gigs', 'works', 'messages'].includes(param('tab')) ? param('tab') : 'overview';
+    const TABS = [
+      { id: 'overview', icon: '📊', label: 'نظرة عامة' },
+      { id: 'users',    icon: '👥', label: 'المستخدمون' },
+      { id: 'orders',   icon: '📦', label: 'الطلبات' },
+      { id: 'gigs',     icon: '🛍️', label: 'الخدمات' },
+      { id: 'works',    icon: '🖼️', label: 'سابقة الأعمال' },
+      { id: 'messages', icon: '✉️', label: 'الرسائل' },
+    ];
+
+    // كل بيانات الموقع
+    const admin = getUser();
+    const users = lsGet(LS.users, []);
+    const members = users.filter(u => u.email !== ADMIN_EMAIL);
+    const orders = getOrders();
+    const userGigs = myGigs();
+    const allWorks = lsGet(LS.works, []);
+    const messages = lsGet(LS.messages, []);
+    const favs = getFavs();
+    const revenue = orders.filter(o => o.status !== 'cancel').reduce((s, o) => s + o.price, 0);
+    const fees = orders.filter(o => o.status !== 'cancel').reduce((s, o) => s + Math.max(2, Math.round((o.price / 1.05) * 0.05)), 0);
+    const activeOrders = orders.filter(o => o.status === 'active').length;
+    const doneOrders = orders.filter(o => o.status === 'done').length;
+
+    function fmtDate(iso) { return new Date(iso).toLocaleDateString('ar-EG'); }
+    function statusHtml(o) {
+      if (o.status === 'done') return '<span class="status status-done">مكتمل ✓</span>';
+      if (o.status === 'cancel') return '<span class="status status-cancel">ملغي</span>';
+      return '<span class="status status-active">قيد التنفيذ</span>';
+    }
+
+    function ordersTable(list, limit) {
+      const rows = limit ? list.slice(0, limit) : list;
+      if (!rows.length) return '<p style="color:var(--muted)">لا توجد طلبات بعد.</p>';
+      return `
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>الطلب</th><th>المشتري</th><th>البائع</th><th>الباقة</th><th>المبلغ</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead>
+          <tbody>
+            ${rows.map(o => `
+            <tr>
+              <td class="order-title"><a href="gig.html?id=${o.gigId}">${o.icon} ${esc(o.gigTitle)}</a><br><small style="color:var(--muted); font-weight:400">${o.id}</small></td>
+              <td>${esc(o.buyer)}</td>
+              <td>${esc(o.seller)}</td>
+              <td>${esc(o.pkg)}</td>
+              <td><b>${money(o.price)}</b></td>
+              <td>${fmtDate(o.date)}</td>
+              <td>${statusHtml(o)}</td>
+              <td style="white-space:nowrap">
+                ${o.status === 'active' ? `
+                <button class="btn btn-outline btn-sm" onclick="adminOrder('${o.id}','done')">إكمال ✓</button>
+                <button class="btn btn-danger btn-sm" onclick="adminOrder('${o.id}','cancel')">إلغاء</button>` : ''}
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    }
+
+    function panels() {
+      if (tab === 'users') return `
+        <div class="panel">
+          <h2>👥 المستخدمون المسجّلون (${members.length})</h2>
+          ${members.length ? `
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>المستخدم</th><th>البريد الإلكتروني</th><th>تاريخ الانضمام</th><th>الطلبات</th><th>الإنفاق</th><th>الخدمات</th><th>الأعمال</th><th></th></tr></thead>
+              <tbody>
+                ${members.map(u => {
+                  const uOrders = orders.filter(o => o.buyer === u.email);
+                  const uSpent = uOrders.filter(o => o.status !== 'cancel').reduce((s, o) => s + o.price, 0);
+                  return `
+                  <tr>
+                    <td><div style="display:flex; align-items:center; gap:10px">${avatarHtml(u.name, '', u.avatar)}<b>${esc(u.name)}</b></div></td>
+                    <td>${esc(u.email)}</td>
+                    <td>${fmtDate(u.joined)}</td>
+                    <td>${uOrders.length}</td>
+                    <td><b>${money(uSpent)}</b></td>
+                    <td>${userGigs.filter(g => g.owner === u.email).length}</td>
+                    <td>${allWorks.filter(w => w.owner === u.email).length}</td>
+                    <td><a class="btn btn-outline btn-sm" href="seller.html?u=${encodeURIComponent(u.email)}">الملف العام</a></td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>` : '<p style="color:var(--muted)">لا يوجد مستخدمون مسجّلون بعد.</p>'}
+        </div>
+        <div class="panel">
+          <h2>🏪 البائعون الأساسيون (${SELLERS.length})</h2>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>البائع</th><th>التخصص</th><th>المستوى</th><th>الدولة</th><th>التقييم</th><th>المبيعات</th><th>الأعمال</th><th></th></tr></thead>
+              <tbody>
+                ${SELLERS.map(s => `
+                <tr>
+                  <td><div style="display:flex; align-items:center; gap:10px">${avatarHtml(s.name)}<b>${esc(s.name)}</b></div></td>
+                  <td>${esc(s.title)}</td>
+                  <td>${esc(s.level)}</td>
+                  <td>${esc(s.country)}</td>
+                  <td>⭐ ${s.rating.toFixed(1)}</td>
+                  <td>${s.sales}</td>
+                  <td>${sellerWorks(s.id).length}</td>
+                  <td><a class="btn btn-outline btn-sm" href="seller.html?id=${s.id}">الملف العام</a></td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+
+      if (tab === 'orders') return `
+        <div class="stats-grid">
+          <div class="stat-card"><div class="icon">📦</div><b>${orders.length}</b><span>إجمالي الطلبات</span></div>
+          <div class="stat-card"><div class="icon">⏳</div><b>${activeOrders}</b><span>قيد التنفيذ</span></div>
+          <div class="stat-card"><div class="icon">✅</div><b>${doneOrders}</b><span>مكتملة</span></div>
+          <div class="stat-card"><div class="icon">💰</div><b>${money(revenue)}</b><span>إجمالي المبالغ</span></div>
+        </div>
+        <div class="panel">
+          <h2>📦 جميع الطلبات (${orders.length})</h2>
+          ${ordersTable(orders)}
+        </div>`;
+
+      if (tab === 'gigs') return `
+        <div class="panel">
+          <h2>🛍️ خدمات أضافها المستخدمون (${userGigs.length})</h2>
+          ${userGigs.length ? `
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>الخدمة</th><th>البائع</th><th>التصنيف</th><th>السعر الأساسي</th><th></th></tr></thead>
+              <tbody>
+                ${userGigs.map(g => `
+                <tr>
+                  <td class="order-title"><a href="gig.html?id=${g.id}">${g.icon} ${esc(g.title)}</a></td>
+                  <td>${esc(g.sellerName)}<br><small style="color:var(--muted)">${esc(g.owner)}</small></td>
+                  <td>${catById(g.cat)?.name || g.cat}</td>
+                  <td><b>${money(g.packages.basic.price)}</b></td>
+                  <td>
+                    <a class="btn btn-outline btn-sm" href="gig.html?id=${g.id}">عرض</a>
+                    <button class="btn btn-danger btn-sm" onclick="adminDeleteGig('${g.id}')">حذف</button>
+                  </td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>` : '<p style="color:var(--muted)">لم يضف المستخدمون خدمات بعد.</p>'}
+        </div>
+        <div class="panel">
+          <h2>📚 الخدمات الأساسية حسب التصنيف (${GIGS.length})</h2>
+          ${CATEGORIES.map(c => {
+            const n = GIGS.filter(g => g.cat === c.id).length;
+            const max = Math.max(...CATEGORIES.map(x => GIGS.filter(g => g.cat === x.id).length));
+            return `
+            <div class="bar-row">
+              <span class="lbl">${c.icon} ${c.name}</span>
+              <div class="track"><div class="fill" style="width:${Math.round(n / max * 100)}%; background:${c.color}"></div></div>
+              <span class="val">${n}</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+
+      if (tab === 'works') return `
+        <div class="panel">
+          <h2>🖼️ أعمال أضافها المستخدمون (${allWorks.length})</h2>
+          <p style="color:var(--muted); font-size:13.5px; margin-bottom:16px">كل عمل يحمل علامة «أُنجز عبر حُرفة» على طرف الصورة</p>
+          ${allWorks.length ? `<div class="works-grid">${allWorks.map(w => workCardHtml(w, true)).join('')}</div>`
+            : '<p style="color:var(--muted)">لم يضف المستخدمون أعمالاً بعد.</p>'}
+        </div>
+        <div class="panel">
+          <h2>🏪 أعمال البائعين الأساسيين (${SELLERS.reduce((s, x) => s + sellerWorks(x.id).length, 0)})</h2>
+          <div class="works-grid">${SELLERS.flatMap(s => sellerWorks(s.id).slice(0, 1)).map(w => workCardHtml(w)).join('')}</div>
+        </div>`;
+
+      if (tab === 'messages') return `
+        <div class="panel">
+          <h2>✉️ رسائل المستخدمين للبائعين (${messages.length})</h2>
+          ${messages.length ? `
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>من</th><th>إلى</th><th>الخدمة</th><th>الرسالة</th><th>التاريخ</th></tr></thead>
+              <tbody>
+                ${messages.map(m => `
+                <tr>
+                  <td>${esc(m.from || '—')}</td>
+                  <td>${esc(m.to)}</td>
+                  <td><a href="gig.html?id=${m.gigId}" style="color:var(--primary)">عرض الخدمة</a></td>
+                  <td style="max-width:320px">${esc(m.text)}</td>
+                  <td>${fmtDate(m.date)}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>` : '<p style="color:var(--muted)">لا توجد رسائل بعد.</p>'}
+        </div>`;
+
+      // نظرة عامة
+      const catCounts = CATEGORIES.map(c => ({ c, n: allGigs().filter(g => g.cat === c.id).length }));
+      const maxCat = Math.max(...catCounts.map(x => x.n), 1);
+      return `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="icon">👥</div><b>${members.length}</b><span>مستخدم مسجّل</span></div>
+        <div class="stat-card"><div class="icon">📦</div><b>${orders.length}</b><span>إجمالي الطلبات</span></div>
+        <div class="stat-card"><div class="icon">💰</div><b>${money(revenue)}</b><span>إجمالي المبالغ</span></div>
+        <div class="stat-card"><div class="icon">🏦</div><b>${money(fees)}</b><span>أرباح المنصة (رسوم)</span></div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="icon">🛍️</div><b>${allGigs().length}</b><span>خدمة معروضة</span></div>
+        <div class="stat-card"><div class="icon">🏪</div><b>${SELLERS.length + new Set(userGigs.map(g => g.owner)).size}</b><span>بائع نشط</span></div>
+        <div class="stat-card"><div class="icon">🖼️</div><b>${allWorks.length + SELLERS.reduce((s, x) => s + sellerWorks(x.id).length, 0)}</b><span>عمل في سابقات الأعمال</span></div>
+        <div class="stat-card"><div class="icon">✉️</div><b>${messages.length}</b><span>رسالة</span></div>
+      </div>
+      <div class="panel">
+        <h2>الخدمات حسب التصنيف</h2>
+        ${catCounts.map(({ c, n }) => `
+        <div class="bar-row">
+          <span class="lbl">${c.icon} ${c.name}</span>
+          <div class="track"><div class="fill" style="width:${Math.round(n / maxCat * 100)}%; background:${c.color}"></div></div>
+          <span class="val">${n}</span>
+        </div>`).join('')}
+      </div>
+      <div class="panel">
+        <h2>أحدث الطلبات</h2>
+        ${ordersTable(orders, 5)}
+      </div>`;
+    }
+
+    content.innerHTML = `
+    <div class="dash-layout">
+      <aside class="dash-side">
+        <div class="dash-user">
+          ${avatarHtml(admin.name, 'avatar-lg', admin.avatar)}
+          <b>${esc(admin.name)}</b>
+          <span class="badge badge-gold" style="margin-top:6px; display:inline-block">🛡️ مدير المنصة</span>
+        </div>
+        <nav class="dash-nav">
+          ${TABS.map(t => `<a href="admin.html?tab=${t.id}" class="${tab === t.id ? 'active' : ''}">${t.icon} ${t.label}</a>`).join('')}
+          <a href="index.html">🏠 عرض الموقع</a>
+        </nav>
+      </aside>
+      <main>${panels()}</main>
+    </div>`;
+
+    window.adminOrder = function (orderId, status) {
+      updateOrderStatus(orderId, status);
+      toast(status === 'done' ? 'تم وضع الطلب كمكتمل ✓' : 'تم إلغاء الطلب');
+      setTimeout(() => location.reload(), 600);
+    };
+
+    window.adminDeleteGig = function (gigId) {
+      if (!confirm('حذف هذه الخدمة نهائياً من المنصة؟')) return;
+      deleteMyGig(gigId);
+      toast('تم حذف الخدمة');
+      setTimeout(() => location.reload(), 600);
+    };
+
+    window.removeWork = function (workId) {
+      deleteUserWork(workId);
+      toast('تم حذف العمل');
+      setTimeout(() => location.reload(), 600);
+    };
+  }
+</script>
+</body>
+</html>

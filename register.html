@@ -20,6 +20,17 @@
     <div class="form-error" id="formError"></div>
     <form id="registerForm">
       <div class="field">
+        <label>الصورة الشخصية <span style="color:var(--danger)">*</span></label>
+        <div class="avatar-upload">
+          <div class="avatar-preview" id="avatarPreview">📷</div>
+          <div>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none">
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('avatarInput').click()">اختر صورة</button>
+            <div class="hint">إلزامية لجميع المستخدمين — تظهر في حسابك وملفك العام</div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
         <label for="name">الاسم الكامل</label>
         <input class="input" type="text" id="name" placeholder="مثال: محمد أحمد" required>
       </div>
@@ -48,12 +59,30 @@
 
   if (getUser()) location.href = 'dashboard.html';
 
+  // الصورة الشخصية (إلزامية): تُصغَّر إلى مربع 160px وتُخزَّن Data URL
+  let avatarData = null;
+  document.getElementById('avatarInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    fileToDataUrl(file, 160, dataUrl => {
+      avatarData = dataUrl;
+      document.getElementById('avatarPreview').innerHTML = `<img src="${dataUrl}" alt="الصورة الشخصية">`;
+    });
+  });
+
   document.getElementById('registerForm').addEventListener('submit', e => {
     e.preventDefault();
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim().toLowerCase();
     const password = document.getElementById('password').value;
     const err = document.getElementById('formError');
+
+    if (!avatarData) {
+      err.textContent = 'الصورة الشخصية إلزامية — اختر صورة لإكمال التسجيل.';
+      err.classList.add('show');
+      window.scrollTo(0, 0);
+      return;
+    }
 
     const users = lsGet(LS.users, []);
     if (users.some(u => u.email === email)) {
@@ -62,10 +91,10 @@
       return;
     }
 
-    const user = { name, email, password, joined: new Date().toISOString() };
+    const user = { name, email, password, avatar: avatarData, joined: new Date().toISOString() };
     users.push(user);
     lsSet(LS.users, users);
-    setUser({ name, email });
+    setUser({ name, email, avatar: avatarData });
 
     const next = param('next');
     location.href = next ? decodeURIComponent(next) : 'dashboard.html';

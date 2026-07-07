@@ -68,7 +68,7 @@
     const cat = catById(gig.cat);
     const reviews = gigReviews(gig);
     const levelBadge = seller.level === 'أفضل بائع' ? 'badge-gold' : seller.level === 'بائع مميز' ? 'badge-green' : seller.level === 'بائع موثوق' ? 'badge-blue' : 'badge-gray';
-    const sellerLink = gig.custom ? '#' : `seller.html?id=${seller.id}`;
+    const sellerLink = gig.custom ? `seller.html?u=${encodeURIComponent(seller.email)}` : `seller.html?id=${seller.id}`;
 
     document.getElementById('gigContainer').innerHTML = `
     <div class="gig-layout">
@@ -80,7 +80,7 @@
         <h1>${esc(gig.title)}</h1>
 
         <div class="gig-meta-row">
-          <a href="${sellerLink}">${avatarHtml(seller.name)}</a>
+          <a href="${sellerLink}">${avatarHtml(seller.name, '', seller.avatar)}</a>
           <div>
             <a href="${sellerLink}"><b style="color:var(--dark)">${esc(seller.name)}</b></a>
             <span class="badge ${levelBadge}" style="margin-inline-start:8px">${esc(seller.level)}</span><br>
@@ -109,7 +109,7 @@
           <h2>عن البائع</h2>
           <div class="seller-card">
             <div class="seller-card-top">
-              <a href="${sellerLink}">${avatarHtml(seller.name, 'avatar-lg')}</a>
+              <a href="${sellerLink}">${avatarHtml(seller.name, 'avatar-lg', seller.avatar)}</a>
               <div>
                 <h3>${esc(seller.name)}</h3>
                 <p>${esc(seller.title)}</p>
@@ -212,6 +212,7 @@
       e.preventDefault();
       if (!getUser()) { requireLogin(); return; }
       addMessage({
+        from: getUser().email,
         to: seller.name,
         gigId: gig.id,
         text: document.getElementById('contactMsg').value,

@@ -23,12 +23,13 @@
 
   if (requireLogin()) {
     const user = getUser();
-    const tab = ['overview', 'orders', 'gigs', 'favs'].includes(param('tab')) ? param('tab') : 'overview';
+    const tab = ['overview', 'orders', 'gigs', 'works', 'favs'].includes(param('tab')) ? param('tab') : 'overview';
 
     const TABS = [
       { id: 'overview', icon: '📊', label: 'نظرة عامة' },
       { id: 'orders',   icon: '📦', label: 'طلباتي' },
       { id: 'gigs',     icon: '🛍️', label: 'خدماتي' },
+      { id: 'works',    icon: '🖼️', label: 'سابقة أعمالي' },
       { id: 'favs',     icon: '❤️', label: 'المفضلة' },
     ];
 
@@ -97,6 +98,48 @@
           </div>`}
         </div>`;
 
+      if (tab === 'works') {
+        const works = getUserWorks(user.email);
+        return `
+        <div class="panel">
+          <h2>➕ أضف عملاً إلى سابقة أعمالك</h2>
+          <p style="color:var(--muted); font-size:13.5px; margin-bottom:16px">
+            تظهر أعمالك في <a href="seller.html?u=${encodeURIComponent(user.email)}" style="color:var(--primary); font-weight:700">ملفك العام</a>
+            ويستطيع الجميع الاطلاع عليها — وتُختم كل صورة بعلامة «أُنجز عبر حُرفة».
+          </p>
+          <form id="workForm">
+            <div class="form-row">
+              <div class="field">
+                <label>عنوان العمل</label>
+                <input class="input" type="text" id="workTitle" placeholder="مثال: هوية بصرية لمقهى" maxlength="60" required>
+              </div>
+              <div class="field">
+                <label>صورة العمل (اختياري — أو اختر أيقونة)</label>
+                <div style="display:flex; gap:8px; align-items:center">
+                  <input type="file" id="workImage" accept="image/*" style="display:none">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('workImage').click()">📁 رفع صورة</button>
+                  <select id="workIcon" class="sort-select">
+                    <option>🎨</option><option>💻</option><option>📱</option><option>🛒</option><option>📈</option>
+                    <option>✍️</option><option>🎬</option><option>🎙️</option><option>💼</option><option>🤖</option><option>✨</option>
+                  </select>
+                  <span id="workImgState" style="font-size:12.5px; color:var(--muted)"></span>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">نشر العمل 🖼️</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>🖼️ سابقة أعمالي (${works.length})</h2>
+          ${works.length ? `<div class="works-grid">${works.map(w => workCardHtml(w, true)).join('')}</div>` : `
+          <div class="empty-state">
+            <div class="icon">🖼️</div>
+            <h3>لم تضف أعمالاً بعد</h3>
+            <p>أضف أعمالك المنجزة ليراها العملاء في ملفك العام ويثقوا بخبرتك</p>
+          </div>`}
+        </div>`;
+      }
+
       if (tab === 'favs') return `
         <div class="panel">
           <h2>❤️ المفضلة (${favs.length})</h2>
@@ -127,13 +170,15 @@
     <div class="dash-layout">
       <aside class="dash-side">
         <div class="dash-user">
-          ${avatarHtml(user.name, 'avatar-lg')}
+          ${avatarHtml(user.name, 'avatar-lg', user.avatar)}
           <b>${esc(user.name)}</b>
           <span>${esc(user.email)}</span>
         </div>
         <nav class="dash-nav">
           ${TABS.map(t => `<a href="dashboard.html?tab=${t.id}" class="${tab === t.id ? 'active' : ''}">${t.icon} ${t.label}</a>`).join('')}
+          <a href="seller.html?u=${encodeURIComponent(user.email)}">👁️ ملفي العام</a>
           <a href="create-gig.html">➕ أضف خدمة</a>
+          ${isAdmin() ? '<a href="admin.html">🛡️ لوحة الإدارة</a>' : ''}
         </nav>
       </aside>
       <main>${panels()}</main>
@@ -151,6 +196,40 @@
       toast('تم حذف الخدمة');
       setTimeout(() => location.reload(), 700);
     };
+
+    window.removeWork = function (workId) {
+      deleteUserWork(workId);
+      toast('تم حذف العمل');
+      setTimeout(() => location.reload(), 700);
+    };
+
+    // نموذج إضافة عمل (يظهر في تبويب سابقة الأعمال فقط)
+    const workForm = document.getElementById('workForm');
+    if (workForm) {
+      let workImgData = null;
+      document.getElementById('workImage').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        fileToDataUrl(file, 480, dataUrl => {
+          workImgData = dataUrl;
+          document.getElementById('workImgState').textContent = '✓ تم اختيار الصورة';
+        });
+      });
+      workForm.addEventListener('submit', e => {
+        e.preventDefault();
+        addUserWork({
+          id: 'w' + Date.now().toString(36),
+          owner: user.email,
+          title: document.getElementById('workTitle').value.trim(),
+          icon: document.getElementById('workIcon').value,
+          img: workImgData,
+          grad: Math.floor(Math.random() * GRADS.length),
+          date: new Date().toISOString(),
+        });
+        toast('🎉 أُضيف العمل إلى سابقة أعمالك');
+        setTimeout(() => location.reload(), 700);
+      });
+    }
   }
 </script>
 </body>

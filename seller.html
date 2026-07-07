@@ -21,10 +21,37 @@
   renderHeader();
   renderFooter();
 
-  const seller = sellerById(parseInt(param('id')));
   const content = document.getElementById('content');
+  const uEmail = param('u');
 
-  if (!seller) {
+  // بناء "ملف بائع" موحّد: بائع أساسي (?id=) أو مستخدم مسجّل (?u=email)
+  let profile = null;
+  if (uEmail) {
+    const account = findUserByEmail(decodeURIComponent(uEmail));
+    if (account) {
+      profile = {
+        name: account.name, title: 'عضو في حُرفة', level: 'بائع جديد',
+        country: '—', since: new Date(account.joined).getFullYear(),
+        response: 'ساعة واحدة', rating: 5.0, sales: 0,
+        bio: 'بائع انضم إلى حُرفة وبدأ رحلته في العمل الحر.',
+        avatar: account.avatar || null,
+        gigs: myGigs().filter(g => g.owner === account.email),
+        works: getUserWorks(account.email),
+      };
+    }
+  } else {
+    const s = sellerById(parseInt(param('id')));
+    if (s) {
+      profile = {
+        ...s,
+        avatar: null,
+        gigs: GIGS.filter(g => g.sellerId === s.id),
+        works: sellerWorks(s.id),
+      };
+    }
+  }
+
+  if (!profile) {
     content.innerHTML = `
       <div class="container">
         <div class="empty-state" style="margin:60px 0">
@@ -35,24 +62,23 @@
         </div>
       </div>`;
   } else {
-    document.title = seller.name + ' — حُرفة';
-    const sellerGigs = GIGS.filter(g => g.sellerId === seller.id);
-    const levelBadge = seller.level === 'أفضل بائع' ? 'badge-gold' : seller.level === 'بائع مميز' ? 'badge-green' : seller.level === 'بائع موثوق' ? 'badge-blue' : 'badge-gray';
+    document.title = profile.name + ' — حُرفة';
+    const levelBadge = profile.level === 'أفضل بائع' ? 'badge-gold' : profile.level === 'بائع مميز' ? 'badge-green' : profile.level === 'بائع موثوق' ? 'badge-blue' : 'badge-gray';
 
     content.innerHTML = `
     <div class="seller-hero">
       <div class="container">
         <div class="seller-hero-inner">
-          ${avatarHtml(seller.name, 'avatar-xl')}
+          ${avatarHtml(profile.name, 'avatar-xl', profile.avatar)}
           <div>
-            <h1>${esc(seller.name)} <span class="badge ${levelBadge}" style="vertical-align:middle">${esc(seller.level)}</span></h1>
-            <p class="sub">${esc(seller.title)}</p>
+            <h1>${esc(profile.name)} <span class="badge ${levelBadge}" style="vertical-align:middle">${esc(profile.level)}</span></h1>
+            <p class="sub">${esc(profile.title)}</p>
             <div class="meta">
-              <span>⭐ ${seller.rating.toFixed(1)} تقييم</span>
-              <span>📦 ${seller.sales} عملية بيع</span>
-              <span>📍 ${esc(seller.country)}</span>
-              <span>🕐 يرد خلال ${esc(seller.response)}</span>
-              <span>📅 عضو منذ ${seller.since}</span>
+              <span>⭐ ${profile.rating.toFixed(1)} تقييم</span>
+              <span>📦 ${profile.sales} عملية بيع</span>
+              <span>📍 ${esc(profile.country)}</span>
+              <span>🕐 يرد خلال ${esc(profile.response)}</span>
+              <span>📅 عضو منذ ${profile.since}</span>
             </div>
           </div>
         </div>
@@ -63,16 +89,26 @@
       <div class="section" style="padding-top:44px">
         <div class="panel">
           <h2>نبذة عني</h2>
-          <p style="font-size:15.5px">${esc(seller.bio)}</p>
+          <p style="font-size:15.5px">${esc(profile.bio)}</p>
         </div>
 
         <div class="section-head" style="margin-top:14px">
           <div>
-            <h2>خدمات ${esc(seller.name)} (${sellerGigs.length})</h2>
+            <h2>🖼️ سابقة الأعمال (${profile.works.length})</h2>
+            <p>أعمال أُنجزت وسُلّمت عبر منصة حُرفة — اضغط على أي عمل لعرضه</p>
+          </div>
+        </div>
+        ${profile.works.length
+          ? `<div class="works-grid" style="margin-bottom:44px">${profile.works.map(w => workCardHtml(w)).join('')}</div>`
+          : '<p style="color:var(--muted); margin-bottom:44px">لم يضف البائع أعمالاً سابقة بعد.</p>'}
+
+        <div class="section-head" style="margin-top:14px">
+          <div>
+            <h2>خدمات ${esc(profile.name)} (${profile.gigs.length})</h2>
           </div>
         </div>
         <div class="gigs-grid" style="grid-template-columns:repeat(3,1fr)">
-          ${sellerGigs.map(gigCardHtml).join('') || '<p style="color:var(--muted)">لا توجد خدمات معروضة حالياً.</p>'}
+          ${profile.gigs.map(gigCardHtml).join('') || '<p style="color:var(--muted)">لا توجد خدمات معروضة حالياً.</p>'}
         </div>
       </div>
     </div>`;
