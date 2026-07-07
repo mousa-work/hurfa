@@ -33,9 +33,9 @@
       </div>
     </div>
     <div class="hero-stats">
-      <div class="stat"><b>+12,000</b><span>خدمة احترافية</span></div>
-      <div class="stat"><b>+4,500</b><span>مستقل موهوب</span></div>
-      <div class="stat"><b>+38,000</b><span>طلب مكتمل</span></div>
+      <div class="stat"><b data-count="12000" data-prefix="+">+12,000</b><span>خدمة احترافية</span></div>
+      <div class="stat"><b data-count="4500" data-prefix="+">+4,500</b><span>مستقل موهوب</span></div>
+      <div class="stat"><b data-count="38000" data-prefix="+">+38,000</b><span>طلب مكتمل</span></div>
       <div class="stat"><b>4.8/5</b><span>متوسط التقييم</span></div>
     </div>
   </div>
@@ -66,6 +66,19 @@
       <a href="browse.html" class="more">عرض المزيد ←</a>
     </div>
     <div class="gigs-grid" id="popularGigs"></div>
+  </div>
+</section>
+
+<!-- الثقة والأمان -->
+<section class="section" aria-labelledby="trust-title">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2 id="trust-title">اطلب وأنت مطمئن</h2>
+        <p>ضمانات حُرفة تحمي حقوقك في كل طلب</p>
+      </div>
+    </div>
+    <div class="trust-grid" id="trustGrid"></div>
   </div>
 </section>
 
@@ -170,6 +183,19 @@
         <span>${count} خدمات</span>
       </a>`;
   }).join('');
+
+  // بطاقات الثقة والأمان (أيقونات SVG — إرشاد ui-ux-pro-max)
+  const TRUST = [
+    { icon: ICONS.shield,  t: 'دفع آمن 100%',      d: 'مبلغك محفوظ لدى المنصة ولا يصل للبائع إلا بعد استلامك للعمل' },
+    { icon: ICONS.refund,  t: 'ضمان استرداد',       d: 'لم يُنجز طلبك كما اتفقتما؟ نعيد لك كامل المبلغ دون نقاش' },
+    { icon: ICONS.badge,   t: 'بائعون موثّقون',      d: 'مستويات بائعين وتقييمات حقيقية وسابقة أعمال مختومة من المنصة' },
+    { icon: ICONS.support, t: 'دعم على مدار الساعة', d: 'فريق الدعم جاهز للمساعدة في أي خلاف أو استفسار طوال أيام الأسبوع' },
+  ];
+  document.getElementById('trustGrid').innerHTML = TRUST.map(x => `
+    <div class="trust-card">
+      <span class="trust-icon">${x.icon}</span>
+      <div><h3>${x.t}</h3><p>${x.d}</p></div>
+    </div>`).join('');
 
   // أعلى 8 خدمات تقييماً (مع عدد المقيّمين كعامل ترجيح)
   const popular = [...GIGS]

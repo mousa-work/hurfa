@@ -23,6 +23,17 @@ function lsGet(key, fallback) {
 }
 function lsSet(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
+/* ---------- أيقونات SVG لعناصر الواجهة (بدل الإيموجي — إرشاد ui-ux-pro-max) ---------- */
+const ICONS = {
+  search: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  moon: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>',
+  sun: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg>',
+  shield: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.7 9a.6.6 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="m9 12 2 2 4-4"/></svg>',
+  refund: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.8L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 3"/></svg>',
+  badge: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.85 8.6a2.3 2.3 0 0 1 2.2-2.2 2.3 2.3 0 0 0 1.6-.65 2.3 2.3 0 0 1 3.2 0 2.3 2.3 0 0 0 1.6.65 2.3 2.3 0 0 1 2.2 2.2 2.3 2.3 0 0 0 .64 1.6 2.3 2.3 0 0 1 0 3.2 2.3 2.3 0 0 0-.65 1.6 2.3 2.3 0 0 1-2.2 2.2 2.3 2.3 0 0 0-1.6.64 2.3 2.3 0 0 1-3.2 0 2.3 2.3 0 0 0-1.6-.65 2.3 2.3 0 0 1-2.2-2.2 2.3 2.3 0 0 0-.64-1.6 2.3 2.3 0 0 1 0-3.2 2.3 2.3 0 0 0 .65-1.6Z" transform="translate(3.6 1.4) scale(1.15)"/><path d="m9 12 2 2 4-4"/></svg>',
+  support: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 18 0"/><path d="M21 16a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3ZM3 16a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/></svg>',
+};
+
 /* ---------- الوضع الداكن ---------- */
 (function initTheme() {
   try {
@@ -37,7 +48,7 @@ function toggleTheme() {
   document.documentElement.classList.toggle('dark', dark);
   try { localStorage.setItem('hurfa_theme', dark ? 'dark' : 'light'); } catch {}
   const btn = document.getElementById('themeBtn');
-  if (btn) btn.textContent = dark ? '☀️' : '🌙';
+  if (btn) btn.innerHTML = dark ? ICONS.sun : ICONS.moon;
 }
 
 /* ---------- الجلسة ---------- */
@@ -241,7 +252,7 @@ function gigCardHtml(gig) {
   <article class="gig-card">
     <div class="gig-thumb" style="${gradStyle(gig.grad)}">
       <a href="gig.html?id=${gig.id}" class="emoji" aria-label="${esc(gig.title)}">${gig.icon}</a>
-      <button class="fav-btn ${fav}" onclick="toggleFav('${gig.id}', this)" title="أضف إلى المفضلة">♥</button>
+      <button class="fav-btn ${fav}" onclick="toggleFav('${gig.id}', this)" aria-label="أضف إلى المفضلة" aria-pressed="${fav ? 'true' : 'false'}" title="أضف إلى المفضلة">♥</button>
     </div>
     <div class="gig-body">
       <div class="gig-seller">
@@ -291,18 +302,19 @@ function renderHeader(activeCat) {
     <a href="register.html" class="btn btn-outline btn-sm">إنشاء حساب</a>`;
 
   mount.innerHTML = `
+  <a href="#main-content" class="skip-link">تخطَّ إلى المحتوى الرئيسي</a>
   <header class="site-header">
     <div class="container header-inner">
       <a href="index.html" class="logo">حُرفة<span class="dot">.</span></a>
       <form class="header-search" action="browse.html" method="get">
         <input type="text" name="q" placeholder="ما الخدمة التي تبحث عنها اليوم؟" value="${esc(q)}">
-        <button type="submit" aria-label="بحث">🔍</button>
+        <button type="submit" aria-label="بحث">${ICONS.search}</button>
       </form>
       <button class="menu-btn" id="menuBtn" aria-label="القائمة">☰</button>
       <nav class="header-nav" id="headerNav">
         <a href="browse.html">تصفح الخدمات</a>
         <a href="create-gig.html">كن بائعاً</a>
-        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل الوضع الداكن/الفاتح">${isDark() ? '☀️' : '🌙'}</button>
+        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="تبديل الوضع الداكن/الفاتح" title="تبديل الوضع الداكن/الفاتح">${isDark() ? ICONS.sun : ICONS.moon}</button>
         ${authArea}
       </nav>
     </div>
@@ -312,6 +324,14 @@ function renderHeader(activeCat) {
       </div>
     </div>
   </header>`;
+
+  // تعليم المحتوى الرئيسي لرابط التخطي (دون المساس بمعرّفات الصفحات القائمة)
+  const mainEl = mount.nextElementSibling;
+  if (mainEl) {
+    if (!mainEl.id) mainEl.id = 'main-content';
+    const skip = mount.querySelector('.skip-link');
+    if (skip) skip.setAttribute('href', '#' + mainEl.id);
+  }
 
   const menuBtn = document.getElementById('menuBtn');
   const nav = document.getElementById('headerNav');
@@ -381,6 +401,8 @@ function toast(msg) {
     t = document.createElement('div');
     t.id = 'toast';
     t.className = 'toast';
+    t.setAttribute('role', 'status');
+    t.setAttribute('aria-live', 'polite');
     document.body.appendChild(t);
   }
   t.textContent = msg;
@@ -404,3 +426,52 @@ function gigReviews(gig) {
   }
   return out;
 }
+
+/* ---------- ظهور تدريجي عند التمرير (ui-ux-pro-max §7) ---------- */
+function initReveal() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!('IntersectionObserver' in window)) return;
+  const items = document.querySelectorAll('.gig-card, .cat-card, .step-card, .testi-card, .work-card, .trust-card, .stat-card');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        en.target.classList.add('in');
+        io.unobserve(en.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -40px 0px', threshold: 0.05 });
+  items.forEach((el, i) => {
+    el.classList.add('reveal');
+    el.style.transitionDelay = (i % 4) * 45 + 'ms';
+    io.observe(el);
+  });
+}
+window.addEventListener('load', initReveal);
+
+/* ---------- عدّاد إحصاءات متحرك (smooth stat reveal) ---------- */
+function initCountUp() {
+  const els = document.querySelectorAll('[data-count]');
+  if (!els.length) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const animate = el => {
+    const target = parseInt(el.dataset.count, 10);
+    const prefix = el.dataset.prefix || '';
+    if (reduced) { el.textContent = prefix + target.toLocaleString('en-US'); return; }
+    const start = performance.now();
+    const dur = 900;
+    const tick = now => {
+      const p = Math.min((now - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = prefix + Math.round(target * eased).toLocaleString('en-US');
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) { animate(en.target); io.unobserve(en.target); }
+    });
+  }, { threshold: 0.4 });
+  els.forEach(el => io.observe(el));
+}
+window.addEventListener('load', initCountUp);
