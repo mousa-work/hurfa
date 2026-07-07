@@ -41,7 +41,7 @@
     content.innerHTML = `
     <div class="checkout-layout">
       <div>
-        <h1 style="font-size:26px; font-weight:800; color:var(--dark); margin-bottom:6px">إتمام الطلب</h1>
+        <h1 style="font-size:26px; font-weight:800; color:var(--heading); margin-bottom:6px">إتمام الطلب</h1>
         <p style="color:var(--muted); margin-bottom:26px">خطوة أخيرة ويصبح طلبك بين يدي ${esc(seller.name)}</p>
 
         <div class="panel">
@@ -119,7 +119,7 @@
           <div class="icon">✓</div>
           <h1>تم تأكيد طلبك بنجاح!</h1>
           <p>
-            رقم الطلب: <b style="color:var(--dark)">${orderId}</b><br>
+            رقم الطلب: <b style="color:var(--heading)">${orderId}</b><br>
             سيبدأ <b>${esc(seller.name)}</b> بالعمل على طلبك فوراً،
             والتسليم المتوقع خلال <b>${pkg.days} ${pkg.days <= 2 ? 'يوم' : 'أيام'}</b>.
           </p>

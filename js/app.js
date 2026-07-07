@@ -23,6 +23,23 @@ function lsGet(key, fallback) {
 }
 function lsSet(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
+/* ---------- الوضع الداكن ---------- */
+(function initTheme() {
+  try {
+    const saved = localStorage.getItem('hurfa_theme');
+    const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', dark);
+  } catch {}
+})();
+function isDark() { return document.documentElement.classList.contains('dark'); }
+function toggleTheme() {
+  const dark = !isDark();
+  document.documentElement.classList.toggle('dark', dark);
+  try { localStorage.setItem('hurfa_theme', dark ? 'dark' : 'light'); } catch {}
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = dark ? '☀️' : '🌙';
+}
+
 /* ---------- الجلسة ---------- */
 function getUser() { return lsGet(LS.session, null); }
 function isAdmin() { return getUser()?.email === ADMIN_EMAIL; }
@@ -285,6 +302,7 @@ function renderHeader(activeCat) {
       <nav class="header-nav" id="headerNav">
         <a href="browse.html">تصفح الخدمات</a>
         <a href="create-gig.html">كن بائعاً</a>
+        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل الوضع الداكن/الفاتح">${isDark() ? '☀️' : '🌙'}</button>
         ${authArea}
       </nav>
     </div>
